@@ -18,6 +18,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Verify publish permission
+        shell: bash
+        run: git push --dry-run origin HEAD:main
+
       - name: Check expiry time
         id: gate
         shell: bash
