@@ -1,0 +1,48 @@
+name: Expire Busan trip page
+
+on:
+  schedule:
+    - cron: "0 15 17 8 *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: expire-busan-trip-page
+  cancel-in-progress: false
+
+jobs:
+  expire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check expiry time
+        id: gate
+        shell: bash
+        run: |
+          if [ "$(date -u +%s)" -ge "1786978800" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Replace the protected guide
+        if: steps.gate.outputs.ready == 'true'
+        shell: bash
+        run: cp expired.html index.html
+
+      - name: Publish expired page
+        if: steps.gate.outputs.ready == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "Page is already expired."
+          else
+            git commit -m "Expire trip page after journey"
+            git push
+          fi
